@@ -1,3 +1,5 @@
+using WebApplication1.Database;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.AddScoped<IAnimalDatabase, AnimalDatabase>();
 var app = builder.Build();
 app.Configuration.GetConnectionString("Default");
 // Configure the HTTP request pipeline.

@@ -1,58 +1,68 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
+
 using Microsoft.Data.SqlClient;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using WebApplication1.Database;
 using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 
 namespace WebApplication1.Controllers;
 
 [ApiController]
-[Route ("api/[controller]")]
+
 public class AnimalController:ControllerBase
 {
-        private readonly IConfiguration _configuration;
+        private readonly IAnimalDatabase _database;
 
-        public AnimalController(IConfiguration configuration)
+        public AnimalController(IAnimalDatabase database)
         {
-                _configuration = configuration;
+                _database = database;
+                
         }
 
         [HttpGet]
-        public IActionResult GetAnimals()
+        [Route ("api/animals")]
+        public IActionResult GetAnimals(string? orderBy)
         {
-                using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
-                connection.Open();
-                using SqlCommand sqlCommand = new SqlCommand();
-                sqlCommand.Connection = connection;
-                sqlCommand.CommandText = "SELECT * FROM Animal";
-
-                var reader = sqlCommand.ExecuteReader();
-                var animals = new List<Animal>();
-                int idAnimalOrdinal = reader.GetOrdinal("IdAnimal");
-                int NameOrdinal = reader.GetOrdinal("Name");
-                while (reader.Read())
-                {
-                        animals.Add(new Animal()
-                        {
-                                id = reader.GetInt32(idAnimalOrdinal),
-                                name = reader.GetString(NameOrdinal)
-                        });
-                }
-
-                var animals = _repository.GetAnimals();
+                var animals = _database.GetAnimals(orderBy);
                 return Ok(animals);
         }
 
         [HttpPost]
+        [Route ("api/animals")]
         public IActionResult AddAnimal(AddAnimal animal)
         {
-                using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
-                connection.Open();
-                using SqlCommand sqlCommand = new SqlCommand();
-                sqlCommand.Connection = connection;
-                sqlCommand.CommandText = "INSERT INTO Animal VALUES(@animalName,'','','')";
-                sqlCommand.Parameters.AddWithValue("@animalName", animal.Name);
-                sqlCommand.ExecuteNonQuery();
-                return Created("", null);
+               _database.AddAnimal(animal);
+               return Created();
+        }
+
+        [HttpPut]
+        [Route("api/animals/{IdAnimal:int}")]
+        public IActionResult ChangeAnimal(int IdAnimal, AddAnimal animal)
+        {
+                var result = _database.ChangeAnimal(IdAnimal, animal);
+                if (result == 1)
+                {
+                        return Ok("Changed Animal");
+                }
+                else
+                {
+                       return NotFound("Not Found");
+                } 
+        }
+        [HttpDelete]
+        [Route("api/animals/{IdAnimal:int}")]
+        public IActionResult DeleteAnimal(int IdAnimal)
+        {
+                var result = _database.DeleteAnimal(IdAnimal);
+                if (result == 1)
+                {
+                        return Ok("Deleted Animal");
+                }
+                else
+                {
+                        return NotFound("Not Found");
+                } 
         }
 }
